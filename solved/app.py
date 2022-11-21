@@ -8,14 +8,12 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta   
 
 from flask import Flask, jsonify
-import os
+
 #################################################
 # Database Setup
 #################################################
-print('*****************************************************************************')
-print(os.getcwd())
-engine = create_engine("sqlite:///hawaii.sqlite")
 
+engine = create_engine("sqlite:///../Resources/hawaii.sqlite")
 
 # reflect an existing database into a new model
 Base = automap_base()
@@ -36,15 +34,16 @@ app = Flask(__name__)
 # Flask Routes
 #################################################
 @app.route("/")
-def welcome():
+def welcome():    
+    
     """List all available api routes."""
     return (
         f"Available Routes:<br/>"
         f"/api/v1.0/precipitation<br/>"
         f"/api/v1.0/stations<br/>"
-        f"/api/v1.0/tobs<br/"
-         f"/api/v1.0/&lt;start&gt;<br/>"
-         f"/api/v1.0/&lt;start&gt;/&lt;end&gt;"
+        f"/api/v1.0/tobs<br/>"
+        f"/api/v1.0/&lt;start&gt;<br/>"                
+        f"/api/v1.0/&lt;start&gt;/&lt;end&gt;"
     )
     
 @app.route("/api/v1.0/precipitation")
@@ -64,137 +63,67 @@ def precipitation():
     # Create a dictionary from the row data and append to a list of  all_date_percp
     all_date_percp = []
     for date, prcp in results:
-        date_percp_dict = {date: prcp}
-        # date_percp_dict = {}
-        # date_percp_dict["key_date"] = date  
-        # date_percp_dict["value_prcp"] = prcp    
+        date_percp_dict = {date: prcp}  
+        # date_percp_dict[date] = prcp
         all_date_percp.append(date_percp_dict)
 
     return jsonify(all_date_percp)
 
-
-# all_date_percp = []
-#     for date ,prcp in results:
-#         date_percp_dict = {}
-#         date_percp_dict["date"] = date
-#         date_percp_dict["prcp"] = prcp    
-#         all_date_percp.append(date_percp_dict)
-
-#     return jsonify(all_date_percp)
-
 @app.route("/api/v1.0/stations")
 def stations():
-    # Create our session (link) from Python to the DB
-    session = Session(engine)
-
-    """ Return a JSON list of stations from the dataset."""      
-    
-      
+    with Session(engine) as session:        
+        """ Return a JSON list of stations from the dataset."""          
     # Query all Station
-    results = session.query(Station.name).all()
-
-    session.close()
-
+        results = session.query(Station.name).all()
+         
     #Convert list of tuples into normal list
-    all_names = list(np.ravel(results))
-    
+    all_names = list(np.ravel(results))  
 
     return jsonify(all_names)
 
 @app.route("/api/v1.0/tobs")
 def tobs():
-    # Create our session (link) from Python to the DB
-    session = Session(engine)
-
-    """* Query the dates and temperature observations of the most active station for the previous year of data.
-
-    * Return a JSON list of temperature observations (TOBS) for the previous year."""      
-    
-      
-    recent_date_temp = session.query(func.max(Measurement.date)).scalar()
-    
-    recent_date_minus_year_temp = (datetime.strptime(recent_date_temp, '%Y-%m-%d') - relativedelta(years=1)).strftime('%Y-%m-%d')
+    # Create our session (link) from Python to the DB    
+    with Session(engine) as session:
+        """* Query the dates and temperature observations of the most active station for the previous year of data.
+        * Return a JSON list of temperature observations (TOBS) for the previous year."""         
+        recent_date_temp = session.query(func.max(Measurement.date)).scalar()    
+        recent_date_minus_year_temp = (datetime.strptime(recent_date_temp, '%Y-%m-%d') - relativedelta(years=1)).strftime('%Y-%m-%d')
     
     # Query the dates and temperature observations of the most active station for the previous year of data
-    results = session.query(Measurement.date, Measurement.tobs).filter(Measurement.date.between(recent_date_minus_year_temp,recent_date_temp, ) ,Measurement.station =='USC00519281').all()
+    # results = session.query(Measurement.date, Measurement.tobs)
+    results = session.query(Measurement.tobs)\
+        .filter(Measurement.date.between(recent_date_minus_year_temp,recent_date_temp, ) ,Measurement.station =='USC00519281')\
+        .all()
+      # Create a dictionary from the row data and append to a list of  all_date_tobs
     
+    #Convert list of tuples into normal list
+    all_tobs = list(np.ravel(results))
     
-    session.close()
-
-     # Create a dictionary from the row data and append to a list of  all_date_tobs
-    all_date_tobs = []
-    for date ,tobs in results:
-        date_tobs_dict = {}
-        date_tobs_dict["date"] = date  
-        date_tobs_dict["tobs"] = tobs   
-        all_date_tobs.append(date_tobs_dict)
-
-    return jsonify(all_date_tobs)
-
-"""* Return a JSON list of the minimum temperature, the average temperature, and the maximum temperature for a given start or start-end range.
-
-    * When given the start only, calculate `TMIN`, `TAVG`, and `TMAX` for all dates greater than or equal to the start date.
-
-    * When given the start and the end date, calculate the `TMIN`, `TAVG`, and `TMAX` for dates from the start date through the end date (inclusive)."""
-
-  
-  
-# @app.route("/api/v1.0/<start>")
-
-# def min_avg_max_temp(start):
-#     """Fetch the list of the minimum temperature, the average temperature,
-#     and the maximum temperature for a given start supplied by the user, or a 404 if not."""
-#     # Create our session (link) from Python to the DB
-   
-#     session = Session(engine)
-
-#     results =session.query(func.min(Measurement.tobs),func.max(Measurement.tobs),func.avg(Measurement.tobs)).filter(Measurement.date >= start).all()
-
-#     session.close
-
-    
-#      # Create a dictionary from the row data and append to a list of  all_min_max_avg_date
-#     all_min_max_avg_date = []
-    
-#     for min, max,avg in results:
-#         date_tobs_dict = {}
-#         date_tobs_dict["TMIN"] = min  
-#         date_tobs_dict["TMAX"] = max
-#         date_tobs_dict["TAVG"] = avg   
-#         all_min_max_avg_date.append(date_tobs_dict)
-
-#     return jsonify(all_min_max_avg_date)
+    return jsonify(all_tobs)  
 
 
 @app.route("/api/v1.0/<start>") 
 @app.route("/api/v1.0/<start>/<end>")
 
 def min_avg_max_temp2(start, end=None):
-    """Fetch the list of the minimum temperature, the average temperature,
-    and the maximum temperature for a given start supplied by the user, or a 404 if not."""
+    """* Return a JSON list of the minimum temperature, the average temperature, and the maximum temperature for a given start or start-end range.
+    * When given the start only, calculate `TMIN`, `TAVG`, and `TMAX` for all dates greater than or equal to the start date.
+    * When given the start and the end date, calculate the `TMIN`, `TAVG`, and `TMAX` for dates from the start date through the end date (inclusive)."""
+
     # Create our session (link) from Python to the DB
     session = Session(engine)
-
-    results =session.query(func.min(Measurement.tobs),func.max(Measurement.tobs),func.avg(Measurement.tobs)).filter(Measurement.date >= start)
-    if end:
-        results=results.filter( Measurement.date <= end)
+    with Session(engine) as session:
+        results =session.query(func.min(Measurement.tobs),func.max(Measurement.tobs),func.avg(Measurement.tobs)).filter(Measurement.date >= start)
+        if end:
+            results=results.filter( Measurement.date <= end)
         
-    results = results.all()
-
-    session.close()
-
-   
-    # session = Session(engine)
-
-    # results =session.query(func.min(Measurement.tobs),func.max(Measurement.tobs),func.avg(Measurement.tobs)).filter(Measurement.date >= start , Measurement.date <= end).all()
-
-    # session.close()
-
+        results = results.all()
     
      # Create a dictionary from the row data and append to a list of  all_min_max_avg_date
     all_min_max_avg_date = []
     
-    for min, max,avg in results:
+    for min, max, avg in results:
         date_tobs_dict = {}
         date_tobs_dict["TMIN"] = min  
         date_tobs_dict["TMAX"] = max
