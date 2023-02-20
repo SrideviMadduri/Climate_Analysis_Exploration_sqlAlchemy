@@ -160,6 +160,8 @@ Completed the following steps:
   - Used the average temperature as the bar height (y value).
 
   - Used the peak-to-peak (TMAX-TMIN) value as the y error bar (YERR).
+    
+ ![alt text](https://github.com/SrideviMadduri/Climate_Analysis_Exploration_sqlAlchemy/blob/main/Images/Trip_Average_Temperature.png?raw=true)
 
 
 
@@ -171,7 +173,7 @@ Then found  out what the rainfall has been. Completed the following steps:
 
     - Sorted this in descending order by precipitation amount, and lised the station, name, latitude, longitude, and elevation. Here is the output of the DataFrame:   
     
-    temperature
+ ![alt text](https://github.com/SrideviMadduri/Climate_Analysis_Exploration_sqlAlchemy/blob/main/Images/Rainfall_Average.png?raw=true)
     
 ### Daily Temperature Normals
 Calculated the daily normals for the duration of the trip. Normals are the averages for the minimum, average, and maximum temperatures.
